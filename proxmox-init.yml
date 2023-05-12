@@ -1,4 +1,4 @@
-- hosts: default_host
+- hosts: all
   vars:
     vmid: 6000
     image_url: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-amd64.qcow2
