@@ -1,0 +1,21 @@
+- hosts: default_host
+  #vars:
+    #vmid: 6000
+    #image_url: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-amd64.qcow2
+  tasks:
+    - name: "Download {{ image_url | regex_search('(?!.*\/).*') }}"
+      ansible.builtin.get_url:
+        url: "{{ image_url }}"
+        dest: ~/
+      register: file
+    - name: Creating new KVM machine with extended parameters and populating cloud-init drive configuration (manual)
+      ansible.builtin.command: "{{ item }}"
+      with_items:
+        - qm create "{{ vmid }}" --name "{{ image_url | regex_search('(?!.*?\/).+(?=\.)') }}" --net0 virtio,bridge=vmbr0,firewall=1
+        - qm importdisk "{{ vmid }}" "{{ file.dest }}" local-lvm
+        - qm set "{{ vmid }}" --scsihw virtio-scsi-pci --scsi0 local-lvm:vm-{{ vmid }}-disk-0
+        - qm set "{{ vmid }}" --ide2 local-lvm:cloudinit
+        - qm set "{{ vmid }}" --ipconfig0 ip=dhcp,ip6=auto
+        - qm set "{{ vmid }}" --boot c --bootdisk scsi0
+        - qm set "{{ vmid }}" --serial0 socket --vga serial0
+        - qm set "{{ vmid }}" --agent 1
